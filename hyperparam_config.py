@@ -18,6 +18,7 @@ class ScaleNumParams():
     do_pre_lin_log:bool=True
     post_lin_activation:Literal['sigmoid', 'identity', 'ReLU']='sigmoid'
     n_number_lins:int = 5
+    do_resid_conn_scale_num:bool=False
 
 
 @dataclass
@@ -25,6 +26,7 @@ class AttnToNumParams():
     n_left:int = 2
     n_right:int = 1
     n_attn_heads:int = 5
+    do_resid_conn_attn_to_num:bool=False
 
 
 @dataclass

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Callable
 
 from toolz import identity, partial, pipe as p
@@ -10,20 +9,25 @@ import attention as attn
 import datasets as ds
 
 
-class NumberFillEmbed(nn.Module):
-    def __init__(self, embed_size:int, post_lin_activation:str, do_pre_lin_log:bool):
+class ScaleNumEmbed(nn.Module):
+    def __init__(self, embed_size:int, 
+                 post_lin_activation:str, do_pre_lin_log:bool, n_number_lins:int,
+                 do_resid_conn:bool=False):
         super().__init__()
         self.number_embed = nn.Linear(1, embed_size)
-        self.do_log = do_pre_lin_log
-        self.post_lin_activation = post_lin_activation
+        self.do_pre_lin_log = do_pre_lin_log
+        self.do_resid_conn = do_resid_conn
         self.post_lin_activation:Callable[[torch.Tensor], torch.Tensor] = (
-            torch.sigmoid if self.post_lin_activation=='sigmoid'
+            torch.sigmoid if post_lin_activation=='sigmoid'
             else (
-            torch.relu if self.post_lin_activation=='ReLU'
+            torch.relu if post_lin_activation=='ReLU'
             else identity
             )
         )
-    
+        self.number_lins = nn.ModuleList(
+            [nn.Linear(1, embed_size) for _ in range(n_number_lins)]
+        )
+
     def forward(self, embeds:torch.Tensor, x: dict[ds.NumberAwareKeys, torch.Tensor], **_) -> torch.Tensor:
         numbers = x['numbers'] #n_sample by seq_len
         is_numbers = x['is_numbers'] #n_sample by seq_len
@@ -33,26 +37,9 @@ class NumberFillEmbed(nn.Module):
         ) #n_numbers by e
 
         #gradient error on directly set
-        embeds[is_numbers] = 0*embeds[is_numbers] + number_embeds
+        embeds[is_numbers] = self.do_resid_conn*embeds[is_numbers] + number_embeds
 
         return embeds#n_sample by seq_len by e
-
-    @abstractmethod
-    def run_number_embed(self, numbers:torch.Tensor)->torch.Tensor:
-        pass
-
-
-class ScaleNumEmbed(NumberFillEmbed):
-    def __init__(self, embed_size:int, 
-                 post_lin_activation:str, do_pre_lin_log:bool, n_number_lins:int):
-        super().__init__(
-            embed_size=embed_size, post_lin_activation=post_lin_activation,
-            do_pre_lin_log=do_pre_lin_log, 
-        )
-        self.number_lins = nn.ModuleList(
-            [nn.Linear(1, embed_size) for _ in range(n_number_lins)]
-        )
-
 
     def run_number_embed(self, numbers: torch.Tensor) -> torch.Tensor:
         ret = None
@@ -70,7 +57,7 @@ class ScaleNumEmbed(NumberFillEmbed):
 
         return p(
             numbers, #n_numbers
-            torch.log if self.do_log else identity,
+            torch.log if self.do_pre_lin_log else identity,
             partial(torch.unsqueeze, dim=1), #n_numbers by 1
             lin, #n_numbers by e
             self.post_lin_activation,
@@ -79,8 +66,10 @@ class ScaleNumEmbed(NumberFillEmbed):
     
 class AttnToNumEmbed(nn.Module):
     def __init__(self, n_left:int, n_right:int, 
-                 embed_size:int, n_attn_heads:int):
+                 embed_size:int, n_attn_heads:int,
+                 do_resid_conn:bool=False):
         super().__init__()
+        self.do_resid_conn = do_resid_conn
         self.n_left=n_left
         self.n_right = n_right
         self.attn_head = attn.MultiHeadAttention(embed_size, n_attn_heads)
@@ -90,7 +79,7 @@ class AttnToNumEmbed(nn.Module):
             embeds[
                 is_numbers #n_sample by seq_len
                 ] = (
-                    0*embeds[is_numbers] + 
+                    self.do_resid_conn*embeds[is_numbers] + 
                     self.calc_attn(embeds, is_numbers).squeeze()
                 )
         

@@ -136,7 +136,8 @@ class TextCnnScaleNum(ScanCnn1Logit):
         self.number_embed = e.ScaleNumEmbed(
             model_params.embed_size,
             model_params.post_lin_activation, model_params.do_pre_lin_log,
-            n_number_lins=model_params.n_number_lins
+            n_number_lins=model_params.n_number_lins,
+            do_resid_conn=model_params.do_resid_conn_scale_num,
         )
     
     def calc_pre_conv(self, x: dict[ds.NumberAwareKeys, torch.Tensor], **_) -> torch.Tensor:
@@ -146,7 +147,7 @@ class TextCnnScaleNum(ScanCnn1Logit):
 
 class TextCnnAttnToNum(TextCnnScaleNum):
     def __init__(self, sequence_len:int, n_terms:int,
-                 model_params: config.AttnToNumParams = config.AttnToNumParams()):
+                 model_params: config.TextCnnAttnToNumParams = config.TextCnnAttnToNumParams()):
         """
         >>> import torch
         >>> seq_len = 10
@@ -171,7 +172,8 @@ class TextCnnAttnToNum(TextCnnScaleNum):
         self.attn_embed = e.AttnToNumEmbed(
             mp.n_left, mp.n_right,
              mp.embed_size,
-             mp.n_attn_heads
+             mp.n_attn_heads,
+             do_resid_conn=mp.do_resid_conn_attn_to_num
         )
 
     def calc_pre_conv(self, x: dict[ds.NumberAwareKeys, torch.Tensor], **_) -> torch.Tensor:
