@@ -1,7 +1,13 @@
 # AttnToNum
 
 ## Overview
-This research presents AttnToNum, an attention-based embedding technique for numerical values in text. The embeddings are derived from both number magnitude and context words. AttnToNum boosted performance for prediction of the composite outcome of Morbitidity or Mortality (MM) after a CABG (coronary artery bypass grafting) surgery. The input was the most recent pre-surgery clinical note.
+This research presents AttnToNum, an attention-based embedding technique for numerical values in text. The embeddings are derived from both number magnitude and context words. AttnToNum boosted performance for prediction of the composite outcome of Morbitidity or Mortality (MM) after a CABG (coronary artery bypass grafting) surgery. The input was the most recent pre-surgery clinical note.  
+
+**Summary**  
+AttentionToNum outperforms basic embeddings if and only if both the numbers are scaled first, and context is incorporated via the attention mechanism.
+This implies that both scaling (magnitude) and attention (context) are important for capturing numerical information.  
+
+See [example](./directions.ipynb) for how to incorporate these embeddings in your own analysis.
 
 
 ## ScaleNum
@@ -10,11 +16,14 @@ $$\vec{y}=σ(\vec{a}log(x)+\vec{b})=\frac{x^{\vec{a}}e^{\vec{b}}}{1+x^{\vec{a}}e
 
 AttnToNum then updates the scaled number embeddings based on local attention.
 
-The steps are as follows:  
+The steps are as follows for CABG analysis:  
 Remove out of context numbers (ROOC) -> Embed -> Scale Numbers -> Attention to the Number's Context  
-In the image below, the embedded values correspond to the first dimension of the dimension-50 embeddings.
+    
+ROOC is optional. Furthermore, residual connections between embedding layers can stabilize performance. See [example](./directions.ipynb) on simulated data for residual connections and no ROOC.  
+   
+In the image below, the embedded values correspond to the first dimension of the dimension-50 embeddings.  
 
-![flow](flow.png)
+![pipeline](fig4.png)
 
 
 ## How To Use (Reproducibility)
