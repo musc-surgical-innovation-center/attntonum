@@ -43,6 +43,7 @@ class TextCnnScaleNumParams(TextCnnParams, ScaleNumParams):
 @dataclass
 class TextCnnAttnToNumParams(TextCnnParams, ScaleNumParams, AttnToNumParams):
     _filler:str=''
+    do_scale_num:bool=True
 
 
 @dataclass
@@ -58,3 +59,4 @@ class LstmScaleNumParams(TextLstmParams, ScaleNumParams):
 @dataclass
 class TextLstmAttnToNumParams(TextLstmParams, ScaleNumParams, AttnToNumParams):
     _filler:str=''
+    do_scale_num:bool=True

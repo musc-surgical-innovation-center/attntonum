@@ -74,9 +74,10 @@ class TextLstmScaleNum(TextLstm):
 
 class TextLstmAttnToNum(TextLstmScaleNum):
     def __init__(self, sequence_len:int, n_terms:int,
-                 model_params: config.AttnToNumParams = config.AttnToNumParams()):
+                 model_params: config.TextLstmAttnToNumParams = config.TextLstmAttnToNumParams()):
         super().__init__(sequence_len, n_terms, model_params)
         mp = model_params
+        self.do_scale_num = mp.do_scale_num
         self.attn_embed = e.AttnToNumEmbed(
             mp.n_left, mp.n_right,
             mp.embed_size,
@@ -84,7 +85,10 @@ class TextLstmAttnToNum(TextLstmScaleNum):
         )
     
     def run_embed(self, x: dict[ds.NumberAwareKeys, torch.Tensor]):
-        embeds = TextLstmScaleNum.run_embed(self, x)
+        if self.do_scale_num:
+            embeds = TextLstmScaleNum.run_embed(self, x)
+        else:
+            embeds = TextLstm.run_embed(self, x)
         return self.attn_embed.forward(embeds, x['is_numbers'])
 
 

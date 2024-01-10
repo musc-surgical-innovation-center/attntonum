@@ -169,6 +169,7 @@ class TextCnnAttnToNum(TextCnnScaleNum):
         """
         super().__init__(sequence_len, n_terms, model_params)
         mp = model_params
+        self.do_scale_num = mp.do_scale_num
         self.attn_embed = e.AttnToNumEmbed(
             mp.n_left, mp.n_right,
              mp.embed_size,
@@ -219,8 +220,11 @@ class TextCnnAttnToNum(TextCnnScaleNum):
         """
         is_numbers = x['is_numbers'] #n_sample by seq_len
 
-        num_embeds = TextCnnScaleNum.calc_pre_conv(self, x) #n_sample by seq_len by e
-        return self.attn_embed.forward(num_embeds, is_numbers)
+        if self.do_scale_num:
+            embeds = TextCnnScaleNum.calc_pre_conv(self, x) #n_sample by seq_len by e
+        else:
+            embeds = ScanCnn1Logit.calc_pre_conv(self, x['nums'])
+        return self.attn_embed.forward(embeds, is_numbers)
 
 
 class CnnLogitExtracts(nn.Module):
