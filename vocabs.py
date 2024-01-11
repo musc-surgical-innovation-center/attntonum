@@ -91,6 +91,8 @@ class NumberAwareMixin(LowercaseVocab):
         array([3, 8])
         >>> numbers[[3, 8]]
         array([ 3.5, 30. ], dtype=float32)
+        >>> nav.number_aware_tokenize(samples[0], do_replace_num=False)[0]
+        ['hello', 'world', 'bun', '3.5', '</s>', 'to', 'finalize', 'bun', '30']
         >>> avr = .1
         >>> get_augmented_numbers = lambda: nav.number_aware_tokenize(sample, augment_vary_ratio=avr)[2][[3,8]]
         >>> import numpy as np
@@ -249,7 +251,7 @@ class NumberContextAwareVocab(NumberAwareMixin):
             txt, clamp=clamp, 
             number_locations=number_locations, number_values=number_values,
             augment_vary_ratio=augment_vary_ratio,
-            do_replace_num=False)
+            do_replace_num=not self.do_keep_context_nums)
 
         token_locs = np.flatnonzero(
             [t in self.context_words for t in tokens]
